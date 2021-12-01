@@ -4,7 +4,7 @@ const { Post, postJoi } = require("../models/Post")
 const mongoose = require("mongoose")
 
 router.get("/", async (req, res) => {
-  const posts = await Post.find().select().limit(50).sort("-dateCreated")
+  const posts = await Post.find().limit(50).sort("-dateCreated")
 
   res.json(posts)
 })
@@ -40,10 +40,10 @@ router.post("/", async (req, res) => {
   })
   try {
     await post.save()
-    res.json(post)
   } catch (error) {
     return res.status(500).json(error.message)
   }
+  res.json(post)
 })
 
 router.put("/:id", async (req, res) => {
@@ -55,7 +55,7 @@ try{
   },
     {new: true}
   )
-  if (!Post) return res.status(404).json("post not found ")
+  if (!post) return res.status(404).json("post not found ")
   res.json(post)
 }catch (error){
 return res.status(500).json(error.message)
@@ -65,7 +65,7 @@ return res.status(500).json(error.message)
 router.delete("/:id", async (req, res) =>{
 try {
     const id =req.params.id 
-    if (!mongoose.Type.ObjectId.isValid(id))  return res.status(400).json("post id should be a vaild object id ")
+    if (!mongoose.Types.ObjectId.isValid(id))  return res.status(400).json("post id should be a vaild object id ")
 
   const post = await Post.findById(req.params.id)
   if (!post) return res.status(404).json("post not found ")

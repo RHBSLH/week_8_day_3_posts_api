@@ -1,7 +1,9 @@
 const express = require("express")
 const bodyParser = require("body-parser")
-const books = require("./routes/posts")
+const posts = require("./routes/posts")
 const  mongoose  = require("mongoose")
+
+const app = express()
 require("dotenv").config()
 
  mongoose.connect(
@@ -15,7 +17,7 @@ console.log("connected to MongoDB")
     })
 
 // console.log(process.env.MONOGDB_PASSWORD)
-const app = express()
+
 app.use(bodyParser.json())
 app.use("/api/posts", posts)
 app.listen(3000, () => {
