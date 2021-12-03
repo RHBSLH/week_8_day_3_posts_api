@@ -1,76 +1,65 @@
 const express = require("express")
 const router = express.Router()
 const { Post, postJoi } = require("../models/Post")
-const mongoose = require("mongoose")
+const checkId =require("../middleware/checkId")
+const checkToken =require("../middleware/checkToken")
+
 
 router.get("/", async (req, res) => {
-  const posts = await Post.find().limit(50).sort("-dateCreated")
+  let posts = await Post.find().select("-__v").populate({
+path:"owner",
+select:"-__v -password"
+  })
 
   res.json(posts)
 })
-router.get("/:id", async (req, res) => {
-  try {
-    const id = req.params.id
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json("post id should be a vaild object id ")
-    }
-    const post = await Post.findById(id)
-    if (!post) {
-      return res.status(400).json("post not found")
-    }
-    res.json(post)
-  } catch (error) {
-    return res.status(500).json(error)
-  }
+router.get("/:id",checkId, async (req, res) => {
+   const post = await Post.findById(req.params.id).select("-__v")
+    if (!post)  return res.status(404).json("post not found")
+    res.json(post) 
 })
-router.post("/", async (req, res) => {
-  const postBody = req.body
 
-  const result = postJoi.validate(postBody)
-
-  if (result.error) {
-    return res.status(400).json(result.error.details[0].message)
-  }
-
-  const post = new Post({
-    title: postBody.title,
-    body: postBody.body,
-    image: postBody.image,
-    owner: postBody.owner,
+router.post("/",checkToken, async (req, res) => {
+  try{
+   const postBody = req.body
+   const {title,body,image}=postBody
+   const result = postJoi.validate(postBody)
+ if (result.error) return res.status(400).json(result.error.details[0].message)
+  
+ const post = new Post({
+    title,
+    body,
+    image,
+    owner,
   })
-  try {
+  
     await post.save()
+    res.json(post)
   } catch (error) {
     return res.status(500).json(error.message)
   }
-  res.json(post)
+  
 })
 
-router.put("/:id", async (req, res) => {
-  const id = req.params.id
-  const { title, body, image,owner } = req.body
+router.put("/:id",checkId,checkToken, async (req, res) => {
 try{
-  const post = await Post.findByIdAndUpdate(id, {
-    $set: { title, body, image,owner },
-  },
-    {new: true}
-  )
-  if (!post) return res.status(404).json("post not found ")
-  res.json(post)
+  const { title, body, image } = req.body
+  const post = await Post.findByIdAndUpdate(req.params.id, { $set: { title, body, image },}, {new:true})
+ if (!post) return res.status(404).json("post not found ")
+  
+ res.json(post)
 }catch (error){
 return res.status(500).json(error.message)
 }
 })
 
-router.delete("/:id", async (req, res) =>{
+router.delete("/:id",checkId,checkToken, async (req, res) =>{
 try {
-    const id =req.params.id 
-    if (!mongoose.Types.ObjectId.isValid(id))  return res.status(400).json("post id should be a vaild object id ")
-
+   
   const post = await Post.findById(req.params.id)
   if (!post) return res.status(404).json("post not found ")
-  await post.remove()
-  res.json("post remove")
+  
+  res.json("post is removed")
 }catch(error){
     return res.status(500).json(error.message)
 }
